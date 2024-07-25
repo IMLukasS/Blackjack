@@ -1,60 +1,113 @@
 function blackjack()
-    % Initialize card deck
-    deck = initDeck();
-    deck = shuffleDeck(deck);
+    initialFunds = 100;  % Starting funds for the player
+    playerFunds = initialFunds;
     
-    % Deal initial cards
-    playerHand = deck(1:2);
-    dealerHand = deck(3:4);
-    deck(1:4) = []; % Remove dealt cards from the deck
-    
-    % Display hands
-    fprintf('Your hand: %s\n', displayHand(playerHand));
-    fprintf('Dealer shows: %s\n', displayCard(dealerHand{1}));
-    
-    % Player's turn
-    while true
-        playerScore = calculateHandValue(playerHand);
-        if playerScore > 21
-            fprintf('Bust! Your hand: %s\n', displayHand(playerHand));
-            fprintf('Your score: %d\n', playerScore);
-            fprintf('You lose!\n');
-            return;
+    while playerFunds > 0
+        fprintf('You have $%d\n', playerFunds);
+        bet = input('Place your bet: $');
+        
+        if bet > playerFunds || bet <= 0
+            fprintf('Invalid bet amount. Try again.\n');
+            continue;
         end
         
-        choice = input('Do you want to hit or stand? (h/s): ', 's');
-        if choice == 's'
-            break;
-        end
+        % Initialize card deck
+        deck = initDeck();
+        deck = shuffleDeck(deck);
         
-        playerHand = [playerHand, deck(1)];
-        deck(1) = [];
+        % Deal initial cards
+        playerHand = deck(1:2);
+        dealerHand = deck(3:4);
+        deck(1:4) = []; % Remove dealt cards from the deck
+        
+        % Display hands
         fprintf('Your hand: %s\n', displayHand(playerHand));
-    end
-    
-    % Dealer's turn
-    fprintf('Dealer turn\n');
-    while calculateHandValue(dealerHand) < 17
-        dealerHand = [dealerHand, deck(1)];
-        deck(1) = [];
-    end
-    
-    % Display final hands and scores
-    playerScore = calculateHandValue(playerHand);
-    dealerScore = calculateHandValue(dealerHand);
-    
-    fprintf('Your hand: %s\n', displayHand(playerHand));
-    fprintf('Dealer hand: %s\n', displayHand(dealerHand));
-    
-    fprintf('Your score: %d\n', playerScore);
-    fprintf('Dealer score: %d\n', dealerScore);
-    
-    if dealerScore > 21 || (playerScore <= 21 && playerScore > dealerScore)
-        fprintf('You win!\n');
-    elseif playerScore < dealerScore && dealerScore <= 21
-        fprintf('You lose!\n');
-    else
-        fprintf('Its a tie!\n');
+        fprintf('Dealer shows: %s\n', displayCard(dealerHand{1}));
+        
+        % Check for Blackjack on the initial deal
+        if calculateHandValue(playerHand) == 21
+            fprintf('Blackjack! You win 3x your bet!\n');
+            playerFunds = playerFunds + 3 * bet;
+            fprintf('New funds: $%d\n', playerFunds);
+            
+            if playerFunds > 0
+                keepPlaying = input('Do you want to play another round? (y/n): ', 's');
+                if keepPlaying == 'n'
+                    fprintf('Thanks for playing! You leave with $%d\n', playerFunds);
+                    break;
+                else
+                    continue;
+                end
+            else
+                fprintf('You are out of funds. Game over!\n');
+                break;
+            end
+        end
+        
+        % Player's turn
+        while true
+            playerScore = calculateHandValue(playerHand);
+            if playerScore == 21
+                fprintf('You have 21! Your turn ends.\n');
+                break;
+            elseif playerScore > 21
+                fprintf('Bust! Your hand: %s\n', displayHand(playerHand));
+                fprintf('Your score: %d\n', playerScore);
+                playerFunds = playerFunds - bet;
+                fprintf('You lose! Remaining funds: $%d\n', playerFunds);
+                break;
+            end
+            
+            choice = input('Do you want to hit or stand? (h/s): ', 's');
+            if choice == 's'
+                break;
+            elseif choice == 'h'
+                playerHand = [playerHand, deck(1)];
+                deck(1) = [];
+                fprintf('Your hand: %s\n', displayHand(playerHand));
+            else
+                fprintf('Invalid choice. Please press ''h'' to hit or ''s'' to stand.\n');
+            end
+        end
+        
+        if playerScore <= 21
+            % Dealer's turn
+            fprintf('Dealer''s turn\n');
+            while calculateHandValue(dealerHand) < 17
+                dealerHand = [dealerHand, deck(1)];
+                deck(1) = [];
+            end
+            
+            % Display final hands and scores
+            playerScore = calculateHandValue(playerHand);
+            dealerScore = calculateHandValue(dealerHand);
+            
+            fprintf('Your hand: %s\n', displayHand(playerHand));
+            fprintf('Dealer''s hand: %s\n', displayHand(dealerHand));
+            
+            fprintf('Your score: %d\n', playerScore);
+            fprintf('Dealer''s score: %d\n', dealerScore);
+            
+            if dealerScore > 21 || (playerScore <= 21 && playerScore > dealerScore)
+                playerFunds = playerFunds + bet;
+                fprintf('You win! New funds: $%d\n', playerFunds);
+            elseif playerScore < dealerScore && dealerScore <= 21
+                playerFunds = playerFunds - bet;
+                fprintf('You lose! Remaining funds: $%d\n', playerFunds);
+            else
+                fprintf('It''s a tie! Funds remain: $%d\n', playerFunds);
+            end
+        end
+        
+        if playerFunds > 0
+            keepPlaying = input('Do you want to play another round? (y/n): ', 's');
+            if keepPlaying == 'n'
+                fprintf('Thanks for playing! You leave with $%d\n', playerFunds);
+                break;
+            end
+        else
+            fprintf('You are out of funds. Game over!\n');
+        end
     end
 end
 
